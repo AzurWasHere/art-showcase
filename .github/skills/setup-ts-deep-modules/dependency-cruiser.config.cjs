@@ -67,7 +67,9 @@ module.exports = {
     },
     {
       name: "no-circular",
-      comment: "No dependency cycles. Scope to `^${R}/` if you want to allow cycles outside packages.",
+      comment:
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: intentional template string in config
+        "No dependency cycles. Scope to `^${R}/` if you want to allow cycles outside packages.",
       severity: "error",
       from: {},
       to: { circular: true },
