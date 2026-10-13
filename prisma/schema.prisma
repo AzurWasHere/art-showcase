@@ -1,9 +1,11 @@
+// Prisma 7 schema. Connection URL lives in prisma.config.ts (not here).
 datasource db {
   provider = "postgresql"
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 model User {
@@ -20,8 +22,11 @@ model User {
 model Artwork {
   id          String   @id @default(cuid())
   title       String
+  slug        String   @unique
   description String?
   imageUrl    String
+  imageWidth  Int?
+  imageHeight Int?
   medium      String?
   dimensions  String?
   year        Int?
@@ -30,5 +35,8 @@ model Artwork {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   authorId    String?
-  author      User?    @relation(fields: [authorId], references: [id])
+  author      User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@index([featured, createdAt])
 }

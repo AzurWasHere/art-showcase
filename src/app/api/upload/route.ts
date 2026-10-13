@@ -1,40 +1,60 @@
-import { put } from "@vercel/blob";
+import { type HandleUploadBody, handleUpload } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_BYTES } from "@/lib/image";
 
+/**
+ * Vercel Blob client-upload handshake. The browser uploads straight to Blob
+ * storage (no 4.5 MB function body limit); this route only mints a scoped,
+ * short-lived token after checking the admin session.
+ */
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return NextResponse.json(
+      {
+        error:
+          "Blob storage is not configured (BLOB_READ_WRITE_TOKEN missing).",
+      },
+      { status: 503 },
+    );
   }
 
-  let formData: FormData;
+  let body: HandleUploadBody;
   try {
-    formData = await request.formData();
+    body = (await request.json()) as HandleUploadBody;
   } catch {
-    return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid request body" },
+      { status: 400 },
+    );
   }
 
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return NextResponse.json({ error: "No file provided" }, { status: 400 });
+  try {
+    const result = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async (pathname) => {
+        const session = await auth();
+        if (!session?.user) throw new Error("Unauthorized");
+        return {
+          allowedContentTypes: [...ACCEPTED_IMAGE_TYPES],
+          maximumSizeInBytes: MAX_IMAGE_BYTES,
+          addRandomSuffix: true,
+          tokenPayload: JSON.stringify({
+            uploadedBy: session.user.email,
+            pathname,
+          }),
+        };
+      },
+      // The artwork row is written by the Server Action once the client has
+      // the final URL, so nothing is required here. (Vercel also calls this
+      // webhook on completion in production; it is a no-op.)
+      onUploadCompleted: async () => {},
+    });
+    return NextResponse.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Upload failed";
+    const status = message === "Unauthorized" ? 401 : 400;
+    return NextResponse.json({ error: message }, { status });
   }
-
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
-    try {
-      const blob = await put(file.name, file, { access: "public" });
-      return NextResponse.json({ url: blob.url });
-    } catch (error) {
-      console.error("Blob upload failed:", error);
-      return NextResponse.json({ error: "Upload failed" }, { status: 500 });
-    }
-  }
-
-  const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
-  const dataUrl = `data:${file.type || "application/octet-stream"};base64,${base64}`;
-  return NextResponse.json({
-    url: dataUrl,
-    warning:
-      "Uploaded locally (set BLOB_READ_WRITE_TOKEN for production Vercel Blob storage)",
-  });
 }

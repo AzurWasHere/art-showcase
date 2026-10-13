@@ -1,159 +1,52 @@
-import { prisma } from "@/lib/prisma";
+import "server-only";
+import { cacheLife, cacheTag } from "next/cache";
+import { db } from "@/lib/prisma";
 
-export interface Artwork {
+/** Cache tag covering every artwork read. Mutations call `updateTag(ARTWORKS_TAG)`. */
+export const ARTWORKS_TAG = "artworks";
+export const artworkTag = (slug: string) => `artwork:${slug}`;
+
+/** Serialisable artwork shape shared by Server and Client Components. */
+export type Artwork = {
   id: string;
+  slug: string;
   title: string;
-  description?: string;
+  description: string | null;
   imageUrl: string;
-  medium?: string;
-  dimensions?: string;
-  year?: number;
+  imageWidth: number | null;
+  imageHeight: number | null;
+  medium: string | null;
+  dimensions: string | null;
+  year: number | null;
   category: string;
   featured: boolean;
   createdAt: string;
   updatedAt: string;
-}
+};
 
-export type NewArtwork = Omit<Artwork, "id" | "createdAt" | "updatedAt">;
+export type CollectionStats = {
+  total: number;
+  featured: number;
+  categories: { name: string; count: number }[];
+  yearRange: [number, number] | null;
+};
 
-const img = (id: string) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1600&q=80`;
+type Row = Awaited<
+  ReturnType<ReturnType<typeof db>["artwork"]["findMany"]>
+>[number];
 
-function seed(n: number, data: NewArtwork, day: number): Artwork {
-  const date = new Date(Date.UTC(2026, 0, day)).toISOString();
-  return { id: `seed-${n}`, createdAt: date, updatedAt: date, ...data };
-}
-
-const CURATED_ARTWORKS: Artwork[] = [
-  seed(
-    1,
-    {
-      title: "Blush Horizon",
-      description:
-        "Soft pastel oils layered into a dreamy sunrise over a quiet sea.",
-      imageUrl: img("photo-1579783902614-a3fb3927b6a5"),
-      medium: "Oil on canvas",
-      dimensions: "90 x 120 cm",
-      year: 2024,
-      category: "Paintings",
-      featured: true,
-    },
-    1,
-  ),
-  seed(
-    2,
-    {
-      title: "Quiet Geometry",
-      description: "Minimalist digital composition in peach and lavender.",
-      imageUrl: img("photo-1550684848-fac1c5b4e853"),
-      medium: "Digital illustration",
-      dimensions: "4000 x 5000 px",
-      year: 2025,
-      category: "Digital Art",
-      featured: true,
-    },
-    2,
-  ),
-  seed(
-    3,
-    {
-      title: "Watercolor Blooms",
-      description: "Translucent washes of rose and mint forming wild blooms.",
-      imageUrl: img("photo-1578301978693-85fa9c0320b9"),
-      medium: "Watercolor on cotton paper",
-      dimensions: "50 x 70 cm",
-      year: 2023,
-      category: "Paintings",
-      featured: true,
-    },
-    3,
-  ),
-  seed(
-    4,
-    {
-      title: "Pastel Facades",
-      description: "Pastel-washed architecture caught in soft morning light.",
-      imageUrl: img("photo-1513364776144-60967b0f800f"),
-      medium: "Archival pigment print",
-      dimensions: "60 x 90 cm",
-      year: 2024,
-      category: "Photography",
-      featured: false,
-    },
-    4,
-  ),
-  seed(
-    5,
-    {
-      title: "Marble Whisper",
-      description:
-        "A hand-carved white marble figure with flowing, soft lines.",
-      imageUrl: img("photo-1544413660-299165566b1d"),
-      medium: "Carrara marble",
-      dimensions: "45 x 30 x 30 cm",
-      year: 2022,
-      category: "Sculpture",
-      featured: false,
-    },
-    5,
-  ),
-  seed(
-    6,
-    {
-      title: "Cloud Collage",
-      description: "Paper, gouache and gold leaf layered in dusty pink tones.",
-      imageUrl: img("photo-1541961017774-22349e4a1262"),
-      medium: "Mixed media on panel",
-      dimensions: "70 x 70 cm",
-      year: 2025,
-      category: "Mixed Media",
-      featured: true,
-    },
-    6,
-  ),
-  seed(
-    7,
-    {
-      title: "Gallery Light",
-      description: "A sunlit gallery hall with pale walls and gentle shadows.",
-      imageUrl: img("photo-1531913764164-f85c52e6e654"),
-      medium: "Digital photograph",
-      dimensions: "50 x 75 cm",
-      year: 2024,
-      category: "Photography",
-      featured: false,
-    },
-    7,
-  ),
-  seed(
-    8,
-    {
-      title: "Lilac Drift",
-      description: "Fluid digital gradients inspired by drifting lilac clouds.",
-      imageUrl: img("photo-1557672172-298e090bd0f1"),
-      medium: "Generative digital art",
-      dimensions: "3000 x 3000 px",
-      year: 2026,
-      category: "Digital Art",
-      featured: false,
-    },
-    8,
-  ),
-];
-
-const memoryStore: Artwork[] = [];
-
-type DbArtwork = Awaited<ReturnType<typeof prisma.artwork.findMany>>[number];
-
-function fromDb(row: DbArtwork): Artwork {
+function serialize(row: Row): Artwork {
   return {
     id: row.id,
+    slug: row.slug,
     title: row.title,
-    description: row.description ?? undefined,
+    description: row.description,
     imageUrl: row.imageUrl,
-    medium: row.medium ?? undefined,
-    dimensions: row.dimensions ?? undefined,
-    year: row.year ?? undefined,
+    imageWidth: row.imageWidth,
+    imageHeight: row.imageHeight,
+    medium: row.medium,
+    dimensions: row.dimensions,
+    year: row.year,
     category: row.category,
     featured: row.featured,
     createdAt: row.createdAt.toISOString(),
@@ -161,87 +54,93 @@ function fromDb(row: DbArtwork): Artwork {
   };
 }
 
-function byNewest(a: Artwork, b: Artwork): number {
-  return b.createdAt.localeCompare(a.createdAt);
-}
-
+/**
+ * Every artwork, newest first. Cached into the static shell; freshness is
+ * driven by tags (`updateTag` after each mutation) rather than time.
+ *
+ * If the database is unreachable (for example during a build that runs before
+ * storage is attached) we return an empty list with a very short lifetime, so
+ * the gallery becomes a request-time hole and recovers on the next visit
+ * instead of baking an empty collection into the prerender.
+ */
 export async function getArtworks(): Promise<Artwork[]> {
-  if (process.env.DATABASE_URL) {
-    try {
-      const rows = await prisma.artwork.findMany({
-        orderBy: { createdAt: "desc" },
-      });
-      if (rows.length > 0) return rows.map(fromDb);
-    } catch (error) {
-      console.error("Failed to load artworks from database:", error);
-    }
+  "use cache";
+  cacheTag(ARTWORKS_TAG);
+  try {
+    const rows = await db().artwork.findMany({
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    });
+    cacheLife("days");
+    return rows.map(serialize);
+  } catch (error) {
+    console.error("[artworks] getArtworks failed:", error);
+    cacheLife("seconds");
+    return [];
   }
-  return [...memoryStore, ...CURATED_ARTWORKS].sort(byNewest);
 }
 
-export async function createArtwork(data: NewArtwork): Promise<Artwork> {
-  let artwork: Artwork | undefined;
-
-  if (process.env.DATABASE_URL) {
-    try {
-      const row = await prisma.artwork.create({
-        data: {
-          title: data.title,
-          description: data.description,
-          imageUrl: data.imageUrl,
-          medium: data.medium,
-          dimensions: data.dimensions,
-          year: data.year,
-          category: data.category,
-          featured: data.featured,
-        },
-      });
-      artwork = fromDb(row);
-    } catch (error) {
-      console.error("Failed to create artwork in database:", error);
+export async function getArtworkBySlug(slug: string): Promise<Artwork | null> {
+  "use cache";
+  cacheTag(ARTWORKS_TAG, artworkTag(slug));
+  try {
+    const row = await db().artwork.findUnique({ where: { slug } });
+    if (!row) {
+      cacheLife("minutes");
+      return null;
     }
+    cacheLife("days");
+    return serialize(row);
+  } catch (error) {
+    console.error(`[artworks] getArtworkBySlug(${slug}) failed:`, error);
+    cacheLife("seconds");
+    return null;
   }
-
-  if (!artwork) {
-    const now = new Date().toISOString();
-    artwork = {
-      ...data,
-      id: `mem-${crypto.randomUUID()}`,
-      createdAt: now,
-      updatedAt: now,
-    };
-  }
-
-  memoryStore.unshift(artwork);
-  return artwork;
 }
 
-export async function deleteArtwork(id: string): Promise<boolean> {
-  let deleted = false;
-
-  if (process.env.DATABASE_URL) {
-    try {
-      const result = await prisma.artwork.deleteMany({ where: { id } });
-      deleted = result.count > 0;
-    } catch (error) {
-      console.error("Failed to delete artwork from database:", error);
-    }
-  }
-
-  const index = memoryStore.findIndex((a) => a.id === id);
-  if (index !== -1) {
-    memoryStore.splice(index, 1);
-    deleted = true;
-  }
-
-  return deleted;
+/** Featured pieces for the home page; falls back to the newest work if nothing is flagged. */
+export async function getFeaturedArtworks(limit = 6): Promise<Artwork[]> {
+  const all = await getArtworks();
+  const featured = all.filter((a) => a.featured);
+  return (featured.length > 0 ? featured : all).slice(0, limit);
 }
 
-export function getCategories(): string[] {
-  return Array.from(
-    new Set([
-      ...CURATED_ARTWORKS.map((a) => a.category),
-      ...memoryStore.map((a) => a.category),
-    ]),
-  );
+/** Previous/next neighbours in gallery order, wrapping at the ends. */
+export async function getArtworkNeighbors(
+  slug: string,
+): Promise<{ previous: Artwork | null; next: Artwork | null }> {
+  const all = await getArtworks();
+  const index = all.findIndex((a) => a.slug === slug);
+  if (index === -1 || all.length < 2) return { previous: null, next: null };
+  return {
+    previous: all[(index - 1 + all.length) % all.length] ?? null,
+    next: all[(index + 1) % all.length] ?? null,
+  };
+}
+
+export async function getCollectionStats(): Promise<CollectionStats> {
+  const all = await getArtworks();
+  const counts = new Map<string, number>();
+  let min = Number.POSITIVE_INFINITY;
+  let max = Number.NEGATIVE_INFINITY;
+  for (const a of all) {
+    counts.set(a.category, (counts.get(a.category) ?? 0) + 1);
+    if (a.year != null) {
+      min = Math.min(min, a.year);
+      max = Math.max(max, a.year);
+    }
+  }
+  return {
+    total: all.length,
+    featured: all.filter((a) => a.featured).length,
+    categories: [...counts.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((x, y) => y.count - x.count || x.name.localeCompare(y.name)),
+    yearRange: Number.isFinite(min) ? [min, max] : null,
+  };
+}
+
+/** Uncached read for the admin edit form, so curators always see the latest row. */
+export async function getArtworkByIdFresh(id: string): Promise<Artwork | null> {
+  const row = await db().artwork.findUnique({ where: { id } });
+  return row ? serialize(row) : null;
 }

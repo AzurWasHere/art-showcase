@@ -1,69 +1,132 @@
-# AURA — Contemporary Art Showcase & Gallery
+# AURA — Art Showcase
 
-AURA is a contemporary art showcase and gallery with a public browsing experience and a protected Admin Studio for curating artwork.
+A gallery website for uploading and showcasing artwork. Visitors browse a
+masonry gallery with search, category and featured filters, a keyboard-navigable
+lightbox and per-artwork pages; a signed-in curator manages the collection from
+an admin dashboard. The home page opens with a WebGPU watercolor simulation that
+reacts to the pointer.
 
-## Tech Stack
+**Palette:** pastel pink · pastel blue · white.
 
-- [Next.js 16](https://nextjs.org) (App Router)
-- React 19
-- Tailwind CSS v4
-- Lucide React icons
-- Shadcn UI
-- Prisma Postgres v7
-- Vercel Blob (image storage)
-- NextAuth v5 (authentication)
+## Stack
 
-## Base Color Palette
-
-- **Soft Pastel Pink**
-- **Serenity Pastel Blue**
-- **Pure White**
-
-## Features
-
-- Responsive art gallery grid
-- Category filtering
-- Search
-- Modal lightbox with high-res details
-- Protected Admin Studio with a drag-and-drop artwork uploader via Vercel Blob
-- Live artwork deletion/curation
-
-## Environment Variables
-
-Create a `.env` file in the project root:
-
-| Variable | Description |
+| Area | Choice |
 | --- | --- |
-| `DATABASE_URL` | Postgres connection string used by Prisma. |
-| `BLOB_READ_WRITE_TOKEN` | Read/write token for your Vercel Blob store. |
-| `AUTH_SECRET` | Secret used by NextAuth to sign sessions. Generate with `npx auth secret` or `openssl rand -base64 32`. |
-| `ADMIN_EMAIL` | Email address for the Admin Studio login. |
-| `ADMIN_PASSWORD` | Password for the Admin Studio login. |
+| Framework | [Next.js 16](https://nextjs.org) (App Router, Cache Components, React Compiler) |
+| UI | [shadcn/ui](https://ui.shadcn.com) on Base UI, Tailwind CSS v4, [lucide-react](https://lucide.dev) icons, [sonner](https://sonner.emilkowal.ski) toasts |
+| Data | [Prisma 7](https://www.prisma.io) + PostgreSQL (`@prisma/adapter-pg`) |
+| Images | [Vercel Blob](https://vercel.com/storage/blob) in production, `public/uploads/` in development |
+| Auth | [Auth.js v5](https://authjs.dev) (NextAuth) credentials provider, JWT sessions, `proxy.ts` route guard |
+| Hero | WebGPU compute shader (WGSL) watercolor simulation with a reduced-motion/no-WebGPU fallback |
 
-## Getting Started
+## Project layout
+
+```
+src/
+  app/
+    (site)/            public pages: home, gallery, gallery/[slug], about
+    (auth)/login/      curator sign-in (Server Action)
+    admin/             protected dashboard: list, new, [id]/edit
+    api/upload/        Vercel Blob client-upload token route
+    api/upload/local/  dev-only local upload route
+    api/auth/          Auth.js handlers
+  components/
+    site/ home/ gallery/ admin/ ui/   feature and shadcn components
+    webgpu/            watercolor shader, engine and canvas
+  lib/
+    prisma.ts          lazy Prisma client (pg adapter)
+    artworks.ts        cached data layer ("use cache" + cache tags)
+  auth.ts, auth.config.ts, proxy.ts
+prisma/
+  schema.prisma, migrations/, seed.ts
+```
+
+Reads go through `src/lib/artworks.ts`, which is cached with `"use cache"` and
+tagged. Server Actions in `src/app/admin/actions.ts` perform writes and call
+`updateTag()` so every page reflects changes immediately.
+
+## Local development
+
+Requirements: Node 20+, [pnpm](https://pnpm.io), Docker Desktop (for Postgres).
 
 ```bash
 pnpm install
-npx prisma generate
+cp .env.example .env        # then fill in AUTH_SECRET (npx auth secret) and ADMIN_*
+pnpm db:up                  # Postgres 17 in Docker on localhost:5433
+pnpm db:migrate             # apply migrations (also regenerates the Prisma client)
+pnpm db:seed                # create the admin user (+ optional local sample data)
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open <http://localhost:3000>. Sign in at `/login` with `ADMIN_EMAIL` /
+`ADMIN_PASSWORD` and add artwork from `/admin`.
 
-Other scripts: `pnpm lint`, `pnpm build`, `pnpm start`.
+Without `BLOB_READ_WRITE_TOKEN`, uploads are written to `public/uploads/`
+(gitignored) so the full flow works offline.
 
-## Admin Studio
+### Sample data
 
-Demo login (change before going to production):
+The repository ships with no sample artworks. To seed some on your machine, add
+a gitignored `prisma/seed.local.json` containing an array of:
 
-- Email: `admin@artshowcase.com`
-- Password: `admin12345`
+```json
+{
+  "title": "Blush Current",
+  "description": "…",
+  "imageUrl": "https://images.unsplash.com/photo-…?auto=format&fit=crop&w=1600&q=80",
+  "imageWidth": 1600,
+  "imageHeight": 2400,
+  "medium": "Acrylic pour on canvas",
+  "dimensions": "90 × 120 cm",
+  "year": 2025,
+  "category": "Paintings",
+  "featured": true
+}
+```
+
+`category` must be one of the values in `src/lib/artwork-shared.ts`. Re-running
+`pnpm db:seed` upserts by slug, so it is safe to repeat.
+
+### Scripts
+
+| Script | What it does |
+| --- | --- |
+| `pnpm dev` / `pnpm build` / `pnpm start` | Next.js dev server / production build / serve |
+| `pnpm lint` / `pnpm format` | Biome check / format |
+| `pnpm typecheck` | `tsc --noEmit` |
+| `pnpm db:up` / `pnpm db:down` | Start / stop the Docker Postgres container |
+| `pnpm db:migrate` | `prisma migrate dev` (create + apply migrations locally) |
+| `pnpm db:deploy` | `prisma migrate deploy` (apply committed migrations, e.g. in production) |
+| `pnpm db:seed` | Run `prisma/seed.ts` |
+| `pnpm db:studio` | Open Prisma Studio |
+
+## Environment variables
+
+See [`.env.example`](./.env.example).
+
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `DATABASE_URL` | yes | Postgres connection string. Local default targets the Docker container. |
+| `AUTH_SECRET` | yes | Signs Auth.js sessions. `npx auth secret` generates one. |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | yes | Seeded admin account; also accepted directly by the login form as a fallback. |
+| `BLOB_READ_WRITE_TOKEN` | production | Vercel Blob token. Omit locally to use `public/uploads/`. |
+| `DB_PORT` | no | Host port for the Docker Postgres container (default `5433`). |
 
 ## Deploying to Vercel
 
-1. Push the repository to GitHub and import it at [vercel.com/new](https://vercel.com/new).
-2. In the project's **Storage** tab, create or connect a **Postgres** database (Prisma Postgres). This sets `DATABASE_URL`.
-3. In **Storage**, create a **Blob** store and connect it to the project. This sets `BLOB_READ_WRITE_TOKEN`.
-4. In **Settings → Environment Variables**, add `AUTH_SECRET`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD`.
-5. Deploy. To use the same storage locally, run `vercel env pull .env.local`.
-6. Apply the database schema to the connected database if needed (for example `npx prisma migrate deploy` or `npx prisma db push`).
+1. Import the repository at [vercel.com/new](https://vercel.com/new) (this
+   project is linked to `art-showcase`).
+2. **Storage → Create → Postgres** (Prisma Postgres) and connect it to the
+   project; this provides `DATABASE_URL`.
+3. **Storage → Create → Blob** and connect it; this provides
+   `BLOB_READ_WRITE_TOKEN`.
+4. **Settings → Environment Variables:** add `AUTH_SECRET`, `ADMIN_EMAIL`,
+   `ADMIN_PASSWORD`.
+5. Apply the schema to the production database once:
+   `vercel env pull .env.production.local && pnpm prisma migrate deploy`
+   (or run `pnpm db:deploy` with `DATABASE_URL` pointed at production).
+6. Deploy. The build runs `prisma generate && next build`; artwork pages are
+   prerendered and revalidated on demand through cache tags.
+
+Allowed remote image hosts are configured in `next.config.ts`
+(`images.unsplash.com` and `*.public.blob.vercel-storage.com`).
