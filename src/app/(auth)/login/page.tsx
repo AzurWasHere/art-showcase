@@ -36,7 +36,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
       <div className="relative w-full max-w-md">
         <div className="glass rounded-[2rem] p-8 shadow-lift sm:p-10">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            Curator studio
+            Curator login
           </p>
           <h1 className="mt-3 font-display text-4xl leading-none">
             Welcome back

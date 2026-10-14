@@ -52,7 +52,7 @@ export function Hero() {
             nativeButton={false}
             render={<Link href="/about" />}
           >
-            About the studio
+            About AURA
           </Button>
         </div>
       </div>

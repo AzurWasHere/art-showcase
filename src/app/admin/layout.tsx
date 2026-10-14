@@ -29,11 +29,11 @@ async function AdminGate({ children }: { children: React.ReactNode }) {
             <Logo compact />
             <span className="hidden h-6 w-px bg-border sm:block" />
             <span className="hidden font-display text-xl sm:block">
-              Curator Studio
+              Curator dashboard
             </span>
           </div>
 
-          <nav className="flex items-center gap-1" aria-label="Studio">
+          <nav className="flex items-center gap-1" aria-label="Curator">
             <NavLink href="/admin" exact>
               <span className="inline-flex items-center gap-1.5">
                 <LayoutDashboard className="size-4" /> Dashboard

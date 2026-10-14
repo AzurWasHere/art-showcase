@@ -1,13 +1,12 @@
-import { Mail, MapPin, Sparkles } from "lucide-react";
+import { ArrowRight, Heart } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "About",
   description:
-    "The story behind AURA — how the collection is chosen, photographed and shared.",
+    "The story behind AURA — a small, personal gallery made with love.",
 };
 
 const SWATCHES = [
@@ -33,16 +32,16 @@ const SWATCHES = [
 
 const FAQ = [
   {
-    q: "Are the works for sale?",
-    a: "Some are, some are on loan. Use the enquiry button on any piece and the curator will reply with availability and pricing.",
+    q: "Who is this for?",
+    a: "For the person who made these pieces, and for anyone lucky enough to be shown them. It's a gift, not a shop.",
   },
   {
     q: "How are pieces photographed?",
     a: "Flat works are shot under diffused daylight and colour-matched to the original. Dimensions listed are the unframed image size.",
   },
   {
-    q: "Can I submit my work?",
-    a: "Yes. Send three images and a short note about materials. The collection grows slowly, but it does grow.",
+    q: "Will there be more?",
+    a: "Always. New work is added whenever it's ready, so it's worth coming back.",
   },
 ];
 
@@ -52,15 +51,15 @@ export default function AboutPage() {
       <section className="pastel-mesh grain relative overflow-hidden">
         <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            About the studio
+            About AURA
           </p>
           <h1 className="mt-3 max-w-4xl font-display text-5xl leading-[0.95] text-balance sm:text-7xl">
-            We collect the hour just after sunrise, in paint.
+            A quiet place for work that deserves to be seen.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-foreground/75">
-            AURA is a small, independent gallery. It began in a shared studio in
-            2021 with a dozen canvases leaning against a wall and a rule: only
-            keep what you'd miss. Everything on this site passed that test.
+            AURA is a small, personal gallery made with love. It exists for one
+            reason: so every piece here has a home of its own, somewhere to be
+            looked at slowly and come back to.
           </p>
         </div>
       </section>
@@ -69,9 +68,8 @@ export default function AboutPage() {
         <div>
           <h2 className="font-display text-4xl">The palette is the brief</h2>
           <p className="mt-4 leading-relaxed text-muted-foreground">
-            Three colours sit underneath every decision we make — on the walls,
-            on this website, and in what we choose to show. They aren't a theme
-            so much as a tuning fork.
+            Three colours sit underneath every part of this site. They aren't a
+            theme so much as a tuning fork.
           </p>
         </div>
         <ul className="grid gap-4 sm:grid-cols-3">
@@ -98,24 +96,24 @@ export default function AboutPage() {
       <section className="bg-white">
         <div className="mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:px-8">
           <div>
-            <h2 className="font-display text-4xl">How a piece gets in</h2>
+            <h2 className="font-display text-4xl">How a piece is shown</h2>
             <ol className="mt-8 space-y-6">
               {[
                 [
-                  "Looked at twice",
-                  "Nothing is accepted on first sight. Work is revisited a week later, in different light.",
+                  "Uploaded by hand",
+                  "Every piece is added one at a time, never in bulk.",
                 ],
                 [
-                  "Measured and written up",
-                  "Medium, dimensions, year and a few honest sentences — recorded by the curator, not copied from a label.",
+                  "Written up with care",
+                  "Medium, dimensions, year and a few honest sentences about what it is and why it matters.",
                 ],
                 [
-                  "Photographed in daylight",
-                  "Colour-matched to the original so the screen version doesn't lie.",
+                  "Kept true to colour",
+                  "Photographed in daylight so the screen version doesn't lie.",
                 ],
                 [
-                  "Published, then lived with",
-                  "Pieces stay up as long as they still earn their place.",
+                  "Favourites get featured",
+                  "The pieces that stop you mid-scroll earn a place on the front page.",
                 ],
               ].map(([title, body], i) => (
                 <li key={title} className="flex gap-4">
@@ -134,7 +132,7 @@ export default function AboutPage() {
           </div>
 
           <div>
-            <h2 className="font-display text-4xl">Questions people ask</h2>
+            <h2 className="font-display text-4xl">A few questions</h2>
             <dl className="mt-8 divide-y divide-border">
               {FAQ.map((item) => (
                 <div key={item.q} className="py-5">
@@ -152,38 +150,20 @@ export default function AboutPage() {
       <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="glass flex flex-col gap-8 rounded-[2rem] p-8 shadow-soft md:flex-row md:items-center md:justify-between md:p-12">
           <div>
-            <h2 className="font-display text-4xl">
-              Visit, write, or just say hello
-            </h2>
-            <div className="mt-5 flex flex-col gap-2 text-sm text-muted-foreground">
-              <p className="flex items-center gap-2">
-                <MapPin className="size-4 text-primary" /> Studio visits by
-                appointment, Thursdays and Fridays
-              </p>
-              <p className="flex items-center gap-2">
-                <Mail className="size-4 text-primary" /> studio@aura.gallery
-              </p>
-            </div>
+            <h2 className="font-display text-4xl">Take your time with it</h2>
+            <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+              <Heart className="size-4 text-primary" /> Made with love, in blush
+              and sky.
+            </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <a
-              href="mailto:studio@aura.gallery"
-              className={cn(
-                buttonVariants(),
-                "rounded-full bg-brand-gradient text-white hover:opacity-95",
-              )}
-            >
-              <Mail /> Email the curator
-            </a>
-            <Button
-              variant="outline"
-              className="rounded-full"
-              nativeButton={false}
-              render={<Link href="/gallery" />}
-            >
-              <Sparkles /> Browse the collection
-            </Button>
-          </div>
+          <Button
+            size="lg"
+            className="h-12 rounded-full bg-brand-gradient px-6 text-base text-white hover:opacity-95"
+            nativeButton={false}
+            render={<Link href="/gallery" />}
+          >
+            Open the gallery <ArrowRight />
+          </Button>
         </div>
       </section>
     </div>

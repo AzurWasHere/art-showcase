@@ -57,7 +57,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
         className="h-11 rounded-full bg-brand-gradient text-white hover:opacity-95"
       >
         {pending ? <Loader2 className="animate-spin" /> : <LockKeyhole />}
-        {pending ? "Signing in…" : "Sign in to the studio"}
+        {pending ? "Signing in…" : "Sign in"}
         {!pending && <ArrowRight />}
       </Button>
     </form>

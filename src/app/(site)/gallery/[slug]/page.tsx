@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Mail, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,7 +8,6 @@ import { ArtworkMeta } from "@/components/gallery/artwork-meta";
 import { ShareButton } from "@/components/gallery/share-button";
 import { ArtworkDetailSkeleton } from "@/components/gallery/skeletons";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
 import {
   type Artwork,
   getArtworkBySlug,
@@ -16,7 +15,6 @@ import {
   getArtworks,
 } from "@/lib/artworks";
 import { aspectRatioOf } from "@/lib/image";
-import { cn } from "@/lib/utils";
 
 export async function generateStaticParams() {
   const artworks = await getArtworks();
@@ -66,12 +64,6 @@ async function ArtworkDetail({ slug }: { slug: string }) {
   const related = all
     .filter((a) => a.category === artwork.category && a.id !== artwork.id)
     .slice(0, 3);
-
-  const inquiry = `mailto:studio@aura.gallery?subject=${encodeURIComponent(
-    `Enquiry: ${artwork.title}`,
-  )}&body=${encodeURIComponent(
-    `Hello,\n\nI'd like to know more about "${artwork.title}" (${artwork.medium ?? "mixed media"}${artwork.year ? `, ${artwork.year}` : ""}).\n\nThanks`,
-  )}`;
 
   return (
     <article>
@@ -142,15 +134,6 @@ async function ArtworkDetail({ slug }: { slug: string }) {
           />
 
           <div className="flex flex-wrap gap-2">
-            <a
-              href={inquiry}
-              className={cn(
-                buttonVariants({ size: "lg" }),
-                "h-11 rounded-full bg-brand-gradient px-5 text-white hover:opacity-95",
-              )}
-            >
-              <Mail /> Enquire about this work
-            </a>
             <ShareButton
               path={`/gallery/${artwork.slug}`}
               title={artwork.title}

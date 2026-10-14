@@ -8,14 +8,14 @@ const COLUMNS = [
     links: [
       { label: "Gallery", href: "/gallery" },
       { label: "Featured works", href: "/gallery?featured=1" },
-      { label: "About the studio", href: "/about" },
+      { label: "About AURA", href: "/about" },
     ],
   },
   {
-    heading: "Collect",
+    heading: "Curate",
     links: [
-      { label: "Enquiries", href: "mailto:studio@aura.gallery" },
       { label: "Curator login", href: "/login" },
+      { label: "Add new work", href: "/admin/new" },
     ],
   },
 ];
@@ -36,9 +36,9 @@ export function SiteFooter() {
         <div className="max-w-sm">
           <Logo />
           <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
-            A living collection of paintings, prints, photographs and digital
-            works, curated around soft light and loud colour. New pieces arrive
-            most weeks.
+            A personal collection of paintings, prints, photographs and digital
+            works, gathered around soft light and loud colour. New pieces arrive
+            whenever they're ready.
           </p>
         </div>
 
@@ -66,9 +66,7 @@ export function SiteFooter() {
 
       <div className="relative border-t border-border/70">
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-2 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:px-6 lg:px-8">
-          <p>
-            © AURA Gallery. All artworks remain the property of their makers.
-          </p>
+          <p>© AURA. Made with love, in blush and sky.</p>
           <p className="font-mono">
             Built with Next.js · Prisma Postgres · Vercel Blob · WebGPU
           </p>

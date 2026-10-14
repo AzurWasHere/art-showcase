@@ -93,8 +93,8 @@ export function ArtworkForm({
         <div>
           <h2 className="font-display text-2xl">Details</h2>
           <p className="text-sm text-muted-foreground">
-            Everything except the title is optional, but collectors read all of
-            it.
+            Everything except the title is optional, but every detail makes the
+            piece feel more complete.
           </p>
         </div>
 

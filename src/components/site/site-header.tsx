@@ -1,4 +1,4 @@
-import { LogOut, Palette, Sparkles } from "lucide-react";
+import { LayoutDashboard, LogOut, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { signOutAction } from "@/app/(auth)/actions";
@@ -75,8 +75,8 @@ async function HeaderAuth() {
         nativeButton={false}
         render={<Link href="/admin" />}
       >
-        <Palette />
-        Studio
+        <LayoutDashboard />
+        Dashboard
       </Button>
       <form action={signOutAction}>
         <Button

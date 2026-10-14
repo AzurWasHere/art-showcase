@@ -11,12 +11,12 @@ const PRINCIPLES = [
   {
     icon: Palette,
     title: "Three colours, infinitely",
-    body: "Blush, sky and white are the gallery's grammar; the artists supply the vocabulary.",
+    body: "Blush, sky and white are the gallery's grammar; the work supplies the vocabulary.",
   },
   {
     icon: Droplets,
     title: "Slow additions",
-    body: "A handful of pieces a month, each with its materials, size and story recorded.",
+    body: "New pieces arrive when they're ready, each with its materials, size and story recorded.",
   },
 ];
 
@@ -30,16 +30,16 @@ export function Manifesto() {
       <div className="relative mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:px-8">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            The studio
+            The idea
           </p>
           <h2 className="mt-3 font-display text-4xl leading-tight text-balance sm:text-5xl">
             A gallery built like a sketchbook:{" "}
             <span className="italic">open, unfinished, alive.</span>
           </h2>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-foreground/75">
-            AURA began as a private collection shared between friends. It still
-            works that way — every piece is uploaded by the curator, written up
-            by hand, and shown without pretence. Enquire about anything you see.
+            AURA is a personal collection, made with love. Every piece is
+            uploaded by hand, written up with care, and shown without pretence —
+            just the work, given the room it deserves.
           </p>
           <Button
             className="mt-8 rounded-full"

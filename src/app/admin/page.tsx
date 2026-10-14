@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { getArtworks, getCollectionStats } from "@/lib/artworks";
 
 export const metadata: Metadata = {
-  title: "Curator Studio",
+  title: "Curator dashboard",
   robots: { index: false },
 };
 
