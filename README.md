@@ -4,7 +4,8 @@ A gallery website for uploading and showcasing artwork. Visitors browse a
 masonry gallery with search, category and featured filters, a keyboard-navigable
 lightbox and per-artwork pages; a signed-in curator manages the collection from
 an admin dashboard. The home page opens with a WebGPU watercolor simulation that
-reacts to the pointer.
+reacts to the pointer, and `/for-you` is a full-screen WebGPU meadow of lily of
+the valley swaying in the wind.
 
 **Palette:** pastel pink · pastel blue · white.
 
@@ -17,14 +18,15 @@ reacts to the pointer.
 | Data | [Prisma 7](https://www.prisma.io) + PostgreSQL (`@prisma/adapter-pg`) |
 | Images | [Vercel Blob](https://vercel.com/storage/blob) in production, `public/uploads/` in development |
 | Auth | [Auth.js v5](https://authjs.dev) (NextAuth) credentials provider, JWT sessions, `proxy.ts` route guard |
-| Hero | WebGPU compute shader (WGSL) watercolor simulation with a reduced-motion/no-WebGPU fallback |
+| WebGPU | Watercolor compute simulation (home hero) and a procedural 3D lily-of-the-valley scene with vertex-shader wind (`/for-you`), both with reduced-motion and no-WebGPU fallbacks |
 
 ## Project layout
 
 ```
 src/
   app/
-    (site)/            public pages: home, gallery, gallery/[slug], about
+    (site)/            public pages: home, gallery, gallery/[slug]
+    (immersive)/       full-screen pages without the footer: for-you
     (auth)/login/      curator sign-in (Server Action)
     admin/             protected dashboard: list, new, [id]/edit
     api/upload/        Vercel Blob client-upload token route
@@ -32,7 +34,7 @@ src/
     api/auth/          Auth.js handlers
   components/
     site/ home/ gallery/ admin/ ui/   feature and shadcn components
-    webgpu/            watercolor shader, engine and canvas
+    webgpu/            watercolor hero; lily/ = meadow geometry, shaders, engine
   lib/
     prisma.ts          lazy Prisma client (pg adapter)
     artworks.ts        cached data layer ("use cache" + cache tags)

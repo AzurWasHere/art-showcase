@@ -8,7 +8,7 @@ const COLUMNS = [
     links: [
       { label: "Gallery", href: "/gallery" },
       { label: "Featured works", href: "/gallery?featured=1" },
-      { label: "About AURA", href: "/about" },
+      { label: "For you", href: "/for-you" },
     ],
   },
   {

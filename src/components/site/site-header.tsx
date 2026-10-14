@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export const NAV_ITEMS = [
   { label: "Gallery", href: "/gallery" },
-  { label: "About", href: "/about" },
+  { label: "For you", href: "/for-you" },
 ] as const;
 
 export function SiteHeader() {

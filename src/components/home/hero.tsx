@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowRight, Heart, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { WatercolorCanvas } from "@/components/webgpu/watercolor-canvas";
@@ -50,9 +50,9 @@ export function Hero() {
             variant="ghost"
             className="h-12 rounded-full bg-white/60 px-6 text-base backdrop-blur hover:bg-white"
             nativeButton={false}
-            render={<Link href="/about" />}
+            render={<Link href="/for-you" />}
           >
-            About AURA
+            <Heart className="text-primary" /> For you
           </Button>
         </div>
       </div>

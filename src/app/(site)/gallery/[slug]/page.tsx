@@ -18,6 +18,9 @@ import { aspectRatioOf } from "@/lib/image";
 
 export async function generateStaticParams() {
   const artworks = await getArtworks();
+  // Cache Components needs at least one param to validate the route at build
+  // time; an empty gallery gets a placeholder that renders notFound().
+  if (artworks.length === 0) return [{ slug: "__placeholder__" }];
   return artworks.map((a) => ({ slug: a.slug }));
 }
 

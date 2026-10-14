@@ -45,9 +45,9 @@ export function Manifesto() {
             className="mt-8 rounded-full"
             variant="secondary"
             nativeButton={false}
-            render={<Link href="/about" />}
+            render={<Link href="/for-you" />}
           >
-            Read the full story <ArrowRight />
+            A little something for you <ArrowRight />
           </Button>
         </div>
 
