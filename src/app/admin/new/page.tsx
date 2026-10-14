@@ -1,13 +1,7 @@
 import { ArrowLeft } from "lucide-react";
-import type { Metadata } from "next";
 import Link from "next/link";
 import { createArtworkAction } from "@/app/admin/actions";
 import { ArtworkForm } from "@/components/admin/artwork-form";
-
-export const metadata: Metadata = {
-  title: "New artwork",
-  robots: { index: false },
-};
 
 export default function NewArtworkPage() {
   const uploadMode = process.env.BLOB_READ_WRITE_TOKEN ? "blob" : "local";
@@ -24,9 +18,6 @@ export default function NewArtworkPage() {
         <h1 className="mt-4 font-display text-5xl leading-none">
           Add an artwork
         </h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Upload the image first; the details can be edited any time afterwards.
-        </p>
       </div>
       <ArtworkForm
         mode="create"

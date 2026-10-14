@@ -1,5 +1,4 @@
 import { ArrowLeft } from "lucide-react";
-import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -9,16 +8,11 @@ import { DeleteArtworkButton } from "@/components/admin/artwork-table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getArtworkByIdFresh } from "@/lib/artworks";
 
-export const metadata: Metadata = {
-  title: "Edit artwork",
-  robots: { index: false },
-};
-
 export default function EditArtworkPage({
   params,
 }: PageProps<"/admin/[id]/edit">) {
   return (
-    <Suspense fallback={<Skeleton className="h-[32rem] rounded-3xl" />}>
+    <Suspense fallback={<Skeleton className="h-128 rounded-3xl" />}>
       {params.then(({ id }) => (
         <EditArtwork id={id} />
       ))}

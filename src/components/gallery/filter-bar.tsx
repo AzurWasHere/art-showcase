@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "cn";
 import { ArrowDownUp, Search, Sparkles, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,7 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
 
 export type SortKey = "newest" | "oldest" | "title" | "year";
 

@@ -1,12 +1,12 @@
 "use client";
 
+import { cn } from "cn";
 import { Expand, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { ArtworkImage } from "@/components/gallery/artwork-image";
 import { Badge } from "@/components/ui/badge";
 import type { Artwork } from "@/lib/artworks";
 import { aspectRatioOf } from "@/lib/image";
-import { cn } from "@/lib/utils";
 
 interface ArtworkCardProps {
   artwork: Artwork;

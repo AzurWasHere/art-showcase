@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function ForYouPage() {
   return (
-    <section className="relative h-[calc(100svh-4rem)] min-h-[30rem] overflow-hidden">
+    <section className="relative h-[calc(100svh-4rem)] min-h-120 overflow-hidden">
       <LilyCanvas />
     </section>
   );

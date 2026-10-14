@@ -1,5 +1,6 @@
 import { ExternalLink, LayoutDashboard, LogOut, Plus } from "lucide-react";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { signOutAction } from "@/app/(auth)/actions";
@@ -8,6 +9,11 @@ import { Logo } from "@/components/site/logo";
 import { NavLink } from "@/components/site/nav-link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+
+export const metadata: Metadata = {
+  title: "Curator dashboard",
+  robots: { index: false },
+};
 
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   return (

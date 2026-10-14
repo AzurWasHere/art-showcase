@@ -63,15 +63,6 @@ export function SiteFooter() {
           </div>
         ))}
       </div>
-
-      <div className="relative border-t border-border/70">
-        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-2 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:px-6 lg:px-8">
-          <p>© AURA. Made with love, in blush and sky.</p>
-          <p className="font-mono">
-            Built with Next.js · Prisma Postgres · Vercel Blob · WebGPU
-          </p>
-        </div>
-      </div>
     </footer>
   );
 }

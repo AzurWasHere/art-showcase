@@ -1,8 +1,8 @@
 "use client";
 
+import { cn } from "cn";
 import { Brush, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
 import { type StopWatercolor, startWatercolor } from "./watercolor-engine";
 
 type Status = "booting" | "live" | "fallback";
@@ -70,15 +70,15 @@ export function WatercolorCanvas({
           status === "live" ? "opacity-0" : "opacity-100",
         )}
       >
-        <div className="absolute -top-24 -left-20 size-[32rem] animate-float rounded-full bg-[radial-gradient(closest-side,oklch(0.88_0.09_350/0.85),transparent)] blur-2xl" />
-        <div className="absolute top-1/3 -right-32 size-[36rem] animate-float-slow rounded-full bg-[radial-gradient(closest-side,oklch(0.88_0.07_232/0.85),transparent)] blur-2xl" />
-        <div className="absolute -bottom-32 left-1/3 size-[30rem] animate-float rounded-full bg-[radial-gradient(closest-side,oklch(0.9_0.06_300/0.8),transparent)] blur-2xl [animation-delay:-4s]" />
+        <div className="absolute -top-24 -left-20 size-128 animate-float rounded-full bg-[radial-gradient(closest-side,oklch(0.88_0.09_350/0.85),transparent)] blur-2xl" />
+        <div className="absolute top-1/3 -right-32 size-144 animate-float-slow rounded-full bg-[radial-gradient(closest-side,oklch(0.88_0.07_232/0.85),transparent)] blur-2xl" />
+        <div className="absolute -bottom-32 left-1/3 size-120 animate-float rounded-full bg-[radial-gradient(closest-side,oklch(0.9_0.06_300/0.8),transparent)] blur-2xl [animation-delay:-4s]" />
       </div>
 
       <canvas
         ref={canvasRef}
         className={cn(
-          "absolute inset-0 size-full transition-opacity duration-[1400ms] ease-out",
+          "absolute inset-0 size-full transition-opacity duration-1400 ease-out",
           status === "live" ? "opacity-100" : "opacity-0",
         )}
       />
