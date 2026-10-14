@@ -47,9 +47,5 @@ next-env.d.ts
 # prisma generated client
 /src/generated/
 
-# local dev uploads (Vercel Blob is used in production)
-/public/uploads/*
-!/public/uploads/.gitkeep
-
 # local-only sample data
 /prisma/seed.local.json

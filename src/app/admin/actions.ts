@@ -1,7 +1,5 @@
 "use server";
 
-import { unlink } from "node:fs/promises";
-import path from "node:path";
 import { del } from "@vercel/blob";
 import { refresh, revalidateTag, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
@@ -14,6 +12,7 @@ import {
 } from "@/lib/artwork-schema";
 import { shortId, slugify } from "@/lib/artwork-shared";
 import { ARTWORKS_TAG, artworkTag } from "@/lib/artworks";
+import { isBlobUrl } from "@/lib/image";
 import { db } from "@/lib/prisma";
 
 /** Re-validate on the server: the client schema is a convenience, not a guard. */
@@ -177,22 +176,11 @@ export async function revalidateGalleryAction(): Promise<{
   return { ok: true, message: "Gallery cache refreshed." };
 }
 
-/** Best-effort cleanup of the stored image (Vercel Blob or local dev upload). */
+/** Best-effort cleanup of an uploaded image; pasted external URLs are left alone. */
 async function removeStoredImage(url: string) {
+  if (!isBlobUrl(url)) return;
   try {
-    if (
-      url.includes(".public.blob.vercel-storage.com") &&
-      process.env.BLOB_READ_WRITE_TOKEN
-    ) {
-      await del(url);
-    } else if (
-      url.startsWith("/uploads/") &&
-      process.env.NODE_ENV !== "production"
-    ) {
-      // Uploads are flat files; basename keeps the delete inside public/uploads.
-      const uploadsDir = path.join(process.cwd(), "public", "uploads");
-      await unlink(path.join(uploadsDir, path.basename(url)));
-    }
+    await del(url);
   } catch (error) {
     console.warn("[admin] could not remove stored image:", error);
   }

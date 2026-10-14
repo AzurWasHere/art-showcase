@@ -20,6 +20,29 @@ export function isOptimizableImage(src: string): boolean {
   }
 }
 
+/** Local Vercel Blob emulator origin (docker compose); unset in production. */
+const BLOB_EMULATOR_ORIGIN = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_VERCEL_BLOB_API_URL ?? "").origin;
+  } catch {
+    return null;
+  }
+})();
+
+/** True for files in our blob store, i.e. ones we uploaded and may delete. */
+export function isBlobUrl(url: string): boolean {
+  try {
+    const { origin, protocol, hostname } = new URL(url);
+    return (
+      (protocol === "https:" &&
+        hostname.endsWith(".public.blob.vercel-storage.com")) ||
+      origin === BLOB_EMULATOR_ORIGIN
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** Aspect ratio as a CSS value, defaulting to a gallery-friendly 4:5. */
 export function aspectRatioOf(
   width?: number | null,
@@ -38,23 +61,6 @@ export const ACCEPTED_IMAGE_TYPES = [
 ] as const;
 
 export const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
-
-export function extensionForMime(type: string): string {
-  switch (type) {
-    case "image/jpeg":
-      return "jpg";
-    case "image/png":
-      return "png";
-    case "image/webp":
-      return "webp";
-    case "image/avif":
-      return "avif";
-    case "image/gif":
-      return "gif";
-    default:
-      return "bin";
-  }
-}
 
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;

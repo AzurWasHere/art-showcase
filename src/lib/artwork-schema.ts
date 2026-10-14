@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CATEGORIES } from "@/lib/artwork-shared";
+import { isBlobUrl } from "@/lib/image";
 
 /**
  * Single source of truth for the artwork form. TanStack Form validates the
@@ -9,9 +10,9 @@ import { CATEGORIES } from "@/lib/artwork-shared";
 
 const MAX_YEAR = new Date().getFullYear() + 1;
 
-/** Local `/uploads/` files only exist in development; otherwise require https. */
+/** https anywhere, or our own blob store (the http emulator in development). */
 export function isAllowedImageUrl(url: string): boolean {
-  if (url.startsWith("/uploads/")) return process.env.NODE_ENV !== "production";
+  if (isBlobUrl(url)) return true;
   try {
     return new URL(url).protocol === "https:";
   } catch {

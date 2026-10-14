@@ -50,9 +50,7 @@ export default async function AdminDashboardPage() {
               <dt className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
                 {card.label}
               </dt>
-              <dd
-                className={"mt-2 font-display text-4xl tabular-nums"}
-              >
+              <dd className={"mt-2 font-display text-4xl tabular-nums"}>
                 {card.value}
               </dd>
             </div>

@@ -2,10 +2,7 @@
 
 import { Save, Sparkles } from "lucide-react";
 import Link from "next/link";
-import {
-  ImageUploadField,
-  type UploadMode,
-} from "@/components/admin/image-upload-field";
+import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { fieldError, useAppForm } from "@/components/form/app-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +19,6 @@ interface ArtworkFormProps {
   action: (
     values: ArtworkFormValues,
   ) => Promise<ArtworkActionResult | undefined>;
-  uploadMode: UploadMode;
   artwork?: Artwork;
 }
 
@@ -43,12 +39,7 @@ function defaultValues(artwork?: Artwork): ArtworkFormValues {
   };
 }
 
-export function ArtworkForm({
-  mode,
-  action,
-  uploadMode,
-  artwork,
-}: ArtworkFormProps) {
+export function ArtworkForm({ mode, action, artwork }: ArtworkFormProps) {
   const form = useAppForm({
     defaultValues: defaultValues(artwork),
     validators: {
@@ -80,7 +71,6 @@ export function ArtworkForm({
         <form.Field name="image">
           {(field) => (
             <ImageUploadField
-              mode={uploadMode}
               value={field.state.value}
               onChange={field.handleChange}
               error={fieldError(field.state.meta)}

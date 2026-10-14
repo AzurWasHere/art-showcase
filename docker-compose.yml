@@ -18,5 +18,21 @@ services:
       timeout: 5s
       retries: 10
 
+  blob:
+    # Vercel Blob API emulator: the real @vercel/blob SDK talks to it locally
+    # (via VERCEL_BLOB_API_URL), so dev and production share one upload path.
+    image: ghcr.io/payloadcms/vercel-blob-emulator:1.0.1
+    container_name: art-showcase-blob
+    restart: unless-stopped
+    environment:
+      EMULATOR_BASE_URL: "http://localhost:${BLOB_PORT:-3100}"
+      # Must match BLOB_READ_WRITE_TOKEN in .env (any vercel_blob_rw_<id>_<x>).
+      BLOB_READ_WRITE_TOKEN: vercel_blob_rw_emulator_local
+    ports:
+      - "${BLOB_PORT:-3100}:3000"
+    volumes:
+      - art_showcase_blob:/data
+
 volumes:
   art_showcase_pgdata:
+  art_showcase_blob:

@@ -6,14 +6,15 @@ import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_BYTES } from "@/lib/image";
 /**
  * Vercel Blob client-upload handshake. The browser uploads straight to Blob
  * storage (no 4.5 MB function body limit); this route only mints a scoped,
- * short-lived token after checking the admin session.
+ * short-lived token after checking the admin session. Locally the same flow
+ * runs against the Blob emulator from docker compose.
  */
 export async function POST(request: Request) {
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     return NextResponse.json(
       {
         error:
-          "Blob storage is not configured (BLOB_READ_WRITE_TOKEN missing).",
+          "Blob storage is not configured: set BLOB_READ_WRITE_TOKEN (locally, copy .env.example and run `pnpm db:up`).",
       },
       { status: 503 },
     );
@@ -39,7 +40,6 @@ export async function POST(request: Request) {
         return {
           allowedContentTypes: [...ACCEPTED_IMAGE_TYPES],
           maximumSizeInBytes: MAX_IMAGE_BYTES,
-          addRandomSuffix: true,
           tokenPayload: JSON.stringify({
             uploadedBy: session.user.email,
             pathname,
@@ -47,9 +47,7 @@ export async function POST(request: Request) {
         };
       },
       // The artwork row is written by the Server Action once the client has
-      // the final URL, so nothing is required here. (Vercel also calls this
-      // webhook on completion in production; it is a no-op.)
-      onUploadCompleted: async () => {},
+      // the final URL, so no onUploadCompleted webhook is needed.
     });
     return NextResponse.json(result);
   } catch (error) {

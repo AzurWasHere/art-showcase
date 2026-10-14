@@ -17,7 +17,7 @@ the valley swaying in the wind.
 | UI | [shadcn/ui](https://ui.shadcn.com) on Base UI, Tailwind CSS v4, [lucide-react](https://lucide.dev) icons, [sonner](https://sonner.emilkowal.ski) toasts |
 | Forms | [TanStack Form](https://tanstack.com/form) (`useAppForm` with pre-bound shadcn fields in `src/components/form/app-form.tsx`) + [Zod](https://zod.dev) schema in `src/lib/artwork-schema.ts`, shared by the client form and the Server Actions |
 | Data | [Prisma 7](https://www.prisma.io) + PostgreSQL (`@prisma/adapter-pg`) |
-| Images | [Vercel Blob](https://vercel.com/storage/blob) in production, `public/uploads/` in development |
+| Images | [Vercel Blob](https://vercel.com/storage/blob) via `@vercel/blob` client uploads; locally the same code talks to a Dockerized [Blob emulator](https://github.com/payloadcms/vercel-blob-emulator) |
 | Auth | [Auth.js v5](https://authjs.dev) (NextAuth) credentials provider, JWT sessions, `proxy.ts` route guard |
 | WebGPU | Watercolor compute simulation (home hero) and a procedural 3D lily-of-the-valley scene with vertex-shader wind (`/for-you`), both with reduced-motion and no-WebGPU fallbacks |
 
@@ -31,7 +31,6 @@ src/
     (auth)/login/      curator sign-in (Server Action)
     admin/             protected dashboard: list, new, [id]/edit
     api/upload/        Vercel Blob client-upload token route
-    api/upload/local/  dev-only local upload route
     api/auth/          Auth.js handlers
   components/
     site/ home/ gallery/ admin/ ui/   feature and shadcn components
@@ -50,12 +49,13 @@ tagged. Server Actions in `src/app/admin/actions.ts` perform writes and call
 
 ## Local development
 
-Requirements: Node 20+, [pnpm](https://pnpm.io), Docker Desktop (for Postgres).
+Requirements: Node 20+, [pnpm](https://pnpm.io), Docker Desktop (for Postgres
+and the Blob emulator).
 
 ```bash
 pnpm install
 cp .env.example .env        # then fill in AUTH_SECRET (npx auth secret) and ADMIN_*
-pnpm db:up                  # Postgres 17 in Docker on localhost:5433
+pnpm db:up                  # Postgres 17 on :5433 + Vercel Blob emulator on :3100
 pnpm db:migrate             # apply migrations (also regenerates the Prisma client)
 pnpm db:seed                # create the admin user (+ optional local sample data)
 pnpm dev
@@ -64,8 +64,11 @@ pnpm dev
 Open <http://localhost:3000>. Sign in at `/login` with `ADMIN_EMAIL` /
 `ADMIN_PASSWORD` and add artwork from `/admin`.
 
-Without `BLOB_READ_WRITE_TOKEN`, uploads are written to `public/uploads/`
-(gitignored) so the full flow works offline.
+Uploads use the exact production code path: `@vercel/blob` reads
+`VERCEL_BLOB_API_URL` / `NEXT_PUBLIC_VERCEL_BLOB_API_URL` from `.env` and talks
+to the emulator container, which stores files in a Docker volume and serves them
+from `http://localhost:3100/…`. `pnpm db:down -v` wipes both the database and
+the stored images.
 
 ### Sample data
 
@@ -97,11 +100,10 @@ a gitignored `prisma/seed.local.json` containing an array of:
 | `pnpm dev` / `pnpm build` / `pnpm start` | Next.js dev server / production build / serve |
 | `pnpm lint` / `pnpm format` | Biome check / format |
 | `pnpm typecheck` | `tsc --noEmit` |
-| `pnpm db:up` / `pnpm db:down` | Start / stop the Docker Postgres container |
+| `pnpm db:up` / `pnpm db:down` | Start / stop the Docker services (Postgres + Blob emulator) |
 | `pnpm db:migrate` | `prisma migrate dev` (create + apply migrations locally) |
 | `pnpm db:deploy` | `prisma migrate deploy` (apply committed migrations, e.g. in production) |
 | `pnpm db:seed` | Run `prisma/seed.ts` |
-| `pnpm db:studio` | Open Prisma Studio |
 
 ## Environment variables
 
@@ -112,8 +114,9 @@ See [`.env.example`](./.env.example).
 | `DATABASE_URL` | yes | Postgres connection string. Local default targets the Docker container. |
 | `AUTH_SECRET` | yes | Signs Auth.js sessions. `npx auth secret` generates one. |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | yes | Seeded admin account; also accepted directly by the login form as a fallback. |
-| `BLOB_READ_WRITE_TOKEN` | production | Vercel Blob token. Omit locally to use `public/uploads/`. |
-| `DB_PORT` | no | Host port for the Docker Postgres container (default `5433`). |
+| `BLOB_READ_WRITE_TOKEN` | yes | Vercel Blob token. Locally the emulator token from `.env.example`; in production set by connecting a Blob store. |
+| `VERCEL_BLOB_API_URL`, `NEXT_PUBLIC_VERCEL_BLOB_API_URL` | dev only | Point `@vercel/blob` (server and browser) at the emulator. Leave unset in production. |
+| `DB_PORT`, `BLOB_PORT` | no | Host ports for the Docker services (defaults `5433` and `3100`). |
 
 ## Deploying to Vercel
 

@@ -23,7 +23,6 @@ export default function EditArtworkPage({
 async function EditArtwork({ id }: { id: string }) {
   const artwork = await getArtworkByIdFresh(id);
   if (!artwork) notFound();
-  const uploadMode = process.env.BLOB_READ_WRITE_TOKEN ? "blob" : "local";
   const action = updateArtworkAction.bind(null, artwork.id);
 
   return (
@@ -46,12 +45,7 @@ async function EditArtwork({ id }: { id: string }) {
         </div>
         <DeleteArtworkButton artwork={artwork} />
       </div>
-      <ArtworkForm
-        mode="edit"
-        action={action}
-        uploadMode={uploadMode}
-        artwork={artwork}
-      />
+      <ArtworkForm mode="edit" action={action} artwork={artwork} />
     </div>
   );
 }

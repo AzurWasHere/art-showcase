@@ -15,14 +15,13 @@ import { toast } from "sonner";
 import { ArtworkImage } from "@/components/gallery/artwork-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { shortId } from "@/lib/artwork-shared";
 import {
   ACCEPTED_IMAGE_TYPES,
   aspectRatioOf,
   formatBytes,
   MAX_IMAGE_BYTES,
 } from "@/lib/image";
-
-export type UploadMode = "blob" | "local";
 
 export interface ImageValue {
   url: string;
@@ -31,7 +30,6 @@ export interface ImageValue {
 }
 
 interface ImageUploadFieldProps {
-  mode: UploadMode;
   value: ImageValue;
   onChange: (value: ImageValue) => void;
   error?: string;
@@ -63,7 +61,6 @@ async function readDimensions(
 
 /** Controlled upload field: owns the upload UX, the form owns the value. */
 export function ImageUploadField({
-  mode,
   value,
   onChange,
   error,
@@ -97,27 +94,16 @@ export function ImageUploadField({
     const dims = await readDimensions(file);
 
     try {
-      let finalUrl: string;
-      if (mode === "blob") {
-        const blob = await upload(`artworks/${file.name}`, file, {
-          access: "public",
-          handleUploadUrl: "/api/upload",
-          contentType: file.type,
-          onUploadProgress: ({ percentage }) => setProgress(percentage),
-        });
-        finalUrl = blob.url;
-      } else {
-        const body = new FormData();
-        body.append("file", file);
-        const res = await fetch("/api/upload/local", { method: "POST", body });
-        const json = (await res.json()) as { url?: string; error?: string };
-        if (!res.ok || !json.url)
-          throw new Error(json.error ?? "Upload failed");
-        finalUrl = json.url;
-        setProgress(100);
-      }
+      // Unique path chosen here (not via the token's addRandomSuffix) so Vercel
+      // Blob and the local emulator name files identically.
+      const blob = await upload(`artworks/${shortId(10)}-${file.name}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+        contentType: file.type,
+        onUploadProgress: ({ percentage }) => setProgress(percentage),
+      });
       onChange({
-        url: finalUrl,
+        url: blob.url,
         width: dims?.width ?? null,
         height: dims?.height ?? null,
       });
@@ -215,16 +201,14 @@ export function ImageUploadField({
             <>
               <Loader2 className="size-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">
-                Uploading{mode === "blob" ? ` · ${Math.round(progress)}%` : "…"}
+                Uploading · {Math.round(progress)}%
               </p>
-              {mode === "blob" && (
-                <div className="h-1.5 w-48 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full bg-brand-gradient transition-[width]"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              )}
+              <div className="h-1.5 w-48 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-brand-gradient transition-[width]"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </>
           ) : (
             <>
@@ -240,10 +224,7 @@ export function ImageUploadField({
                   Drop an image here, or click to browse
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  JPEG, PNG, WebP, AVIF or GIF up to 25 MB ·{" "}
-                  {mode === "blob"
-                    ? "stored on Vercel Blob"
-                    : "stored locally (dev mode)"}
+                  JPEG, PNG, WebP, AVIF or GIF up to 25 MB
                 </p>
               </div>
             </>

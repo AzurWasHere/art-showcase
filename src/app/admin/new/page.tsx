@@ -4,8 +4,6 @@ import { createArtworkAction } from "@/app/admin/actions";
 import { ArtworkForm } from "@/components/admin/artwork-form";
 
 export default function NewArtworkPage() {
-  const uploadMode = process.env.BLOB_READ_WRITE_TOKEN ? "blob" : "local";
-
   return (
     <div className="space-y-8">
       <div>
@@ -19,11 +17,7 @@ export default function NewArtworkPage() {
           Add an artwork
         </h1>
       </div>
-      <ArtworkForm
-        mode="create"
-        action={createArtworkAction}
-        uploadMode={uploadMode}
-      />
+      <ArtworkForm mode="create" action={createArtworkAction} />
     </div>
   );
 }
