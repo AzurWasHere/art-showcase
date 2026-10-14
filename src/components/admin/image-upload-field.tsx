@@ -1,6 +1,7 @@
 "use client";
 
 import { upload } from "@vercel/blob/client";
+import { cn } from "cn";
 import {
   CheckCircle2,
   ImagePlus,
@@ -20,15 +21,19 @@ import {
   formatBytes,
   MAX_IMAGE_BYTES,
 } from "@/lib/image";
-import { cn } from "@/lib/utils";
 
 export type UploadMode = "blob" | "local";
 
+export interface ImageValue {
+  url: string;
+  width: number | null;
+  height: number | null;
+}
+
 interface ImageUploadFieldProps {
   mode: UploadMode;
-  defaultUrl?: string | null;
-  defaultWidth?: number | null;
-  defaultHeight?: number | null;
+  value: ImageValue;
+  onChange: (value: ImageValue) => void;
   error?: string;
 }
 
@@ -56,19 +61,17 @@ async function readDimensions(
   }
 }
 
+/** Controlled upload field: owns the upload UX, the form owns the value. */
 export function ImageUploadField({
   mode,
-  defaultUrl,
-  defaultWidth,
-  defaultHeight,
+  value,
+  onChange,
   error,
 }: ImageUploadFieldProps) {
   const inputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [url, setUrl] = useState(defaultUrl ?? "");
-  const [width, setWidth] = useState<number | null>(defaultWidth ?? null);
-  const [height, setHeight] = useState<number | null>(defaultHeight ?? null);
-  const [phase, setPhase] = useState<Phase>(defaultUrl ? "done" : "idle");
+  const { url, width, height } = value;
+  const [phase, setPhase] = useState<Phase>(url ? "done" : "idle");
   const [progress, setProgress] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -113,9 +116,11 @@ export function ImageUploadField({
         finalUrl = json.url;
         setProgress(100);
       }
-      setUrl(finalUrl);
-      setWidth(dims?.width ?? null);
-      setHeight(dims?.height ?? null);
+      onChange({
+        url: finalUrl,
+        width: dims?.width ?? null,
+        height: dims?.height ?? null,
+      });
       setPhase("done");
       setMessage(`${file.name} · ${formatBytes(file.size)}`);
       toast.success("Image uploaded");
@@ -134,9 +139,11 @@ export function ImageUploadField({
     }
     setPhase("uploading");
     const dims = await readDimensions(candidate);
-    setUrl(candidate);
-    setWidth(dims?.width ?? null);
-    setHeight(dims?.height ?? null);
+    onChange({
+      url: candidate,
+      width: dims?.width ?? null,
+      height: dims?.height ?? null,
+    });
     setPhase("done");
     setMessage(
       dims ? "Linked external image" : "Linked external image (size unknown)",
@@ -145,9 +152,7 @@ export function ImageUploadField({
   }
 
   function clear() {
-    setUrl("");
-    setWidth(null);
-    setHeight(null);
+    onChange({ url: "", width: null, height: null });
     setPhase("idle");
     setMessage(null);
     setProgress(0);
@@ -156,10 +161,6 @@ export function ImageUploadField({
 
   return (
     <div className="grid gap-3">
-      <input type="hidden" name="imageUrl" value={url} />
-      <input type="hidden" name="imageWidth" value={width ?? ""} />
-      <input type="hidden" name="imageHeight" value={height ?? ""} />
-
       {url ? (
         <div className="overflow-hidden rounded-3xl bg-card ring-1 ring-foreground/8">
           <div

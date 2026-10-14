@@ -5,124 +5,40 @@ import path from "node:path";
 import { del } from "@vercel/blob";
 import { refresh, revalidateTag, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { requireAdmin } from "@/auth";
-import type { ArtworkFormState, ArtworkFormValues } from "@/lib/artwork-form";
-import { CATEGORIES, isCategory, shortId, slugify } from "@/lib/artwork-shared";
+import {
+  type ArtworkActionResult,
+  type ArtworkData,
+  artworkSchema,
+} from "@/lib/artwork-schema";
+import { shortId, slugify } from "@/lib/artwork-shared";
 import { ARTWORKS_TAG, artworkTag } from "@/lib/artworks";
 import { db } from "@/lib/prisma";
 
-type ParsedArtwork = {
-  title: string;
-  description: string | null;
-  imageUrl: string;
-  imageWidth: number | null;
-  imageHeight: number | null;
-  medium: string | null;
-  dimensions: string | null;
-  year: number | null;
-  category: string;
-  featured: boolean;
-};
-
-function text(formData: FormData, key: string): string {
-  const value = formData.get(key);
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function optional(value: string, max: number): string | null {
-  return value.length === 0 ? null : value.slice(0, max);
-}
-
-function parseDimension(value: string): number | null {
-  if (!value) return null;
-  const n = Number(value);
-  return Number.isInteger(n) && n > 0 && n < 50_000 ? n : null;
-}
-
-function isAllowedImageUrl(url: string): boolean {
-  if (url.startsWith("/uploads/")) return process.env.NODE_ENV !== "production";
-  try {
-    return new URL(url).protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-function parseArtworkForm(
-  formData: FormData,
-): { ok: true; data: ParsedArtwork } | { ok: false; state: ArtworkFormState } {
-  const values: ArtworkFormValues = {
-    title: text(formData, "title"),
-    description: text(formData, "description"),
-    imageUrl: text(formData, "imageUrl"),
-    imageWidth: text(formData, "imageWidth"),
-    imageHeight: text(formData, "imageHeight"),
-    medium: text(formData, "medium"),
-    dimensions: text(formData, "dimensions"),
-    year: text(formData, "year"),
-    category: text(formData, "category"),
-    featured: formData.get("featured") === "on",
-  };
-  const errors: ArtworkFormState["errors"] = {};
-
-  if (values.title.length < 1 || values.title.length > 120) {
-    errors.title = "Give the work a title (1–120 characters).";
-  }
-  if (!values.imageUrl) {
-    errors.imageUrl = "Upload an image before publishing.";
-  } else if (!isAllowedImageUrl(values.imageUrl)) {
-    errors.imageUrl = "Image must be an https URL.";
-  }
-  if (!isCategory(values.category)) {
-    errors.category = `Choose one of: ${CATEGORIES.join(", ")}.`;
-  }
-  const currentYear = new Date().getFullYear();
-  let year: number | null = null;
-  if (values.year) {
-    const parsed = Number(values.year);
-    if (
-      !Number.isInteger(parsed) ||
-      parsed < 1000 ||
-      parsed > currentYear + 1
-    ) {
-      errors.year = `Year must be between 1000 and ${currentYear + 1}.`;
-    } else {
-      year = parsed;
-    }
-  }
-  if (values.description.length > 2000) {
-    errors.description = "Keep the description under 2000 characters.";
-  }
-
-  if (Object.keys(errors).length > 0) {
-    return {
-      ok: false,
-      state: {
-        status: "error",
-        message: "Please fix the highlighted fields.",
-        errors,
-        values,
-      },
-    };
-  }
-
+/** Re-validate on the server: the client schema is a convenience, not a guard. */
+function parseArtwork(
+  values: unknown,
+):
+  | { ok: true; data: ArtworkData }
+  | { ok: false; result: ArtworkActionResult } {
+  const parsed = artworkSchema.safeParse(values);
+  if (parsed.success) return { ok: true, data: parsed.data };
+  const { fieldErrors } = z.flattenError(parsed.error);
   return {
-    ok: true,
-    data: {
-      title: values.title,
-      description: optional(values.description, 2000),
-      imageUrl: values.imageUrl,
-      imageWidth: parseDimension(values.imageWidth),
-      imageHeight: parseDimension(values.imageHeight),
-      medium: optional(values.medium, 120),
-      dimensions: optional(values.dimensions, 120),
-      year,
-      category: values.category,
-      featured: values.featured,
+    ok: false,
+    result: {
+      ok: false,
+      message: "Please fix the highlighted fields.",
+      fieldErrors: Object.fromEntries(
+        Object.entries(fieldErrors).map(([key, messages]) => [
+          key,
+          messages?.[0],
+        ]),
+      ),
     },
   };
 }
-
 async function uniqueSlug(title: string): Promise<string> {
   const base = slugify(title) || "untitled";
   const existing = await db().artwork.findUnique({
@@ -147,12 +63,11 @@ function invalidate(slug?: string) {
 }
 
 export async function createArtworkAction(
-  _previous: ArtworkFormState,
-  formData: FormData,
-): Promise<ArtworkFormState> {
+  values: unknown,
+): Promise<ArtworkActionResult> {
   const user = await requireAdmin();
-  const parsed = parseArtworkForm(formData);
-  if (!parsed.ok) return parsed.state;
+  const parsed = parseArtwork(values);
+  if (!parsed.ok) return parsed.result;
 
   let slug: string;
   try {
@@ -163,10 +78,9 @@ export async function createArtworkAction(
   } catch (error) {
     console.error("[admin] createArtwork failed:", error);
     return {
-      status: "error",
+      ok: false,
       message:
         "The artwork couldn't be saved. Check the database connection and try again.",
-      values: formValuesFrom(formData),
     };
   }
 
@@ -176,12 +90,11 @@ export async function createArtworkAction(
 
 export async function updateArtworkAction(
   id: string,
-  _previous: ArtworkFormState,
-  formData: FormData,
-): Promise<ArtworkFormState> {
+  values: unknown,
+): Promise<ArtworkActionResult> {
   await requireAdmin();
-  const parsed = parseArtworkForm(formData);
-  if (!parsed.ok) return parsed.state;
+  const parsed = parseArtwork(values);
+  if (!parsed.ok) return parsed.result;
 
   let slug: string;
   let previousImage: string | null = null;
@@ -191,7 +104,7 @@ export async function updateArtworkAction(
       select: { slug: true, imageUrl: true },
     });
     if (!existing) {
-      return { status: "error", message: "This artwork no longer exists." };
+      return { ok: false, message: "This artwork no longer exists." };
     }
     slug = existing.slug;
     previousImage = existing.imageUrl;
@@ -199,9 +112,8 @@ export async function updateArtworkAction(
   } catch (error) {
     console.error("[admin] updateArtwork failed:", error);
     return {
-      status: "error",
+      ok: false,
       message: "Changes couldn't be saved. Please try again.",
-      values: formValuesFrom(formData),
     };
   }
 
@@ -211,7 +123,6 @@ export async function updateArtworkAction(
   invalidate(slug);
   redirect(`/gallery/${slug}?updated=1`);
 }
-
 export async function deleteArtworkAction(
   id: string,
 ): Promise<{ ok: boolean; message: string }> {
@@ -264,21 +175,6 @@ export async function revalidateGalleryAction(): Promise<{
   revalidateTag(ARTWORKS_TAG, "max");
   refresh();
   return { ok: true, message: "Gallery cache refreshed." };
-}
-
-function formValuesFrom(formData: FormData): ArtworkFormValues {
-  return {
-    title: text(formData, "title"),
-    description: text(formData, "description"),
-    imageUrl: text(formData, "imageUrl"),
-    imageWidth: text(formData, "imageWidth"),
-    imageHeight: text(formData, "imageHeight"),
-    medium: text(formData, "medium"),
-    dimensions: text(formData, "dimensions"),
-    year: text(formData, "year"),
-    category: text(formData, "category"),
-    featured: formData.get("featured") === "on",
-  };
 }
 
 /** Best-effort cleanup of the stored image (Vercel Blob or local dev upload). */

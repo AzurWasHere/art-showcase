@@ -15,6 +15,7 @@ the valley swaying in the wind.
 | --- | --- |
 | Framework | [Next.js 16](https://nextjs.org) (App Router, Cache Components, React Compiler) |
 | UI | [shadcn/ui](https://ui.shadcn.com) on Base UI, Tailwind CSS v4, [lucide-react](https://lucide.dev) icons, [sonner](https://sonner.emilkowal.ski) toasts |
+| Forms | [TanStack Form](https://tanstack.com/form) (`useAppForm` with pre-bound shadcn fields in `src/components/form/app-form.tsx`) + [Zod](https://zod.dev) schema in `src/lib/artwork-schema.ts`, shared by the client form and the Server Actions |
 | Data | [Prisma 7](https://www.prisma.io) + PostgreSQL (`@prisma/adapter-pg`) |
 | Images | [Vercel Blob](https://vercel.com/storage/blob) in production, `public/uploads/` in development |
 | Auth | [Auth.js v5](https://authjs.dev) (NextAuth) credentials provider, JWT sessions, `proxy.ts` route guard |
